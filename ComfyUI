@@ -22,12 +22,9 @@ source "$VENV/bin/activate"
 SOFTWARE="$SCRIPT_DIR/main.py"
 
 # Add any default args here
-SOFTWARE_ARGS="--verbose --auto-launch --use-pytorch-cross-attention --lowvram --force-fp32 "$@
+SOFTWARE_ARGS="--verbose --auto-launch "$@
 
 # Temporary environment variables
-export GRADIO_ANALYTICS_ENABLED=FALSE
-export LD_PRELOAD=libtcmalloc.so
-PYTORCH_HIP_ALLOC_CONF=garbage_collection_threshold:0.6,max_split_size_mb:2048
 export HSA_OVERRIDE_GFX_VERSION=11.0.0
 
 # Run software, passing all args from this script onwards
