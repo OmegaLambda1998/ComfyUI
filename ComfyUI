@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+
+# Follow however many symlinks are needed to get the true directory and name of this script
+SOURCE=${BASH_SOURCE[0]}
+while [ -L "$SOURCE" ]; do # resolve $SOURCE until the file is no longer a symlink
+    DIR=$( cd -P "$( dirname "$SOURCE" )" >/dev/null 2>&1 && pwd )
+    SOURCE=$(readlink "$SOURCE")
+    [[ $SOURCE != /* ]] && SOURCE=$DIR/$SOURCE # if $SOURCE was a relative symlink, we need to resolve it relative to the path where the symlink file was located
+done
+SCRIPT_DIR=$( cd -P "$( dirname "$SOURCE" )" >/dev/null 2>&1 && pwd )
+SCRIPT_NAME="$( basename "$SOURCE" )"
+PYVENV="${PYVENV:-$HOME/.pyvenv}"
+VENV="$PYVENV/$SCRIPT_NAME"
+
+#
+# Do any setup needed
+#
+deactivate 2> /dev/null
+source "$VENV/bin/activate"
+
+# Path to software entry point
+SOFTWARE="$SCRIPT_DIR/main.py"
+
+# Add any default args here
+SOFTWARE_ARGS="--verbose --auto-launch --use-pytorch-cross-attention --lowvram --force-fp32 "$@
+
+# Temporary environment variables
+export GRADIO_ANALYTICS_ENABLED=FALSE
+export LD_PRELOAD=libtcmalloc.so
+PYTORCH_HIP_ALLOC_CONF=garbage_collection_threshold:0.6,max_split_size_mb:2048
+export HSA_OVERRIDE_GFX_VERSION=11.0.0
+
+# Run software, passing all args from this script onwards
+python3 $SOFTWARE $SOFTWARE_ARGS
