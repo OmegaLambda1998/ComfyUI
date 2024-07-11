@@ -26,6 +26,10 @@ SOFTWARE_ARGS="--verbose --lowvram --disable-smart-memory --use-split-cross-atte
 
 # Temporary environment variables
 export HSA_OVERRIDE_GFX_VERSION=11.0.0
+export PYTORCH_ROCM_ARCH=gfx1102
+export AMDGPU_TARGETS=gfx1102
+export HIP_VISIBLE_DEVICES=0
+export PYTORCH_HIP_ALLOC_CONF=garbage_collection_threshold:0.8,max_split_size_mb:512
 
 # Run software, passing all args from this script onwards
 python3 $SOFTWARE $SOFTWARE_ARGS
