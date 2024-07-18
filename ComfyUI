@@ -22,7 +22,7 @@ source "$VENV/bin/activate"
 SOFTWARE="$SCRIPT_DIR/main.py"
 
 # Add any default args here
-SOFTWARE_ARGS="--verbose --lowvram --disable-smart-memory --use-split-cross-attention "$@
+SOFTWARE_ARGS="--verbose --lowvram --disable-smart-memory --use-split-cross-attention --disable-auto-launch "$@
 
 # Temporary environment variables
 export HSA_OVERRIDE_GFX_VERSION=11.0.0
@@ -32,4 +32,4 @@ export HIP_VISIBLE_DEVICES=0
 export PYTORCH_HIP_ALLOC_CONF=garbage_collection_threshold:0.8,max_split_size_mb:512
 
 # Run software, passing all args from this script onwards
-powerprofilesctl launch --profile power-saver python3 $SOFTWARE $SOFTWARE_ARGS
+python3 $SOFTWARE $SOFTWARE_ARGS
