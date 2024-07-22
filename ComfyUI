@@ -32,4 +32,4 @@ export HIP_VISIBLE_DEVICES=0
 export PYTORCH_HIP_ALLOC_CONF=garbage_collection_threshold:0.8,max_split_size_mb:512
 
 # Run software, passing all args from this script onwards
-python3 $SOFTWARE $SOFTWARE_ARGS
+(cd $SCRIPT_DIR; python3 $SOFTWARE $SOFTWARE_ARGS)
