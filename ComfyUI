@@ -18,6 +18,16 @@ VENV="$PYVENV/$SCRIPT_NAME"
 deactivate 2> /dev/null
 source "$VENV/bin/activate"
 
+#
+# Update all
+#
+if [[ "$1" == "-u" || "$1" == "--update" || "$1" == "update" ]]; then
+    shift
+    fd -u requirements.txt $SCRIPT_DIR -x sed -e '$s/$/\n/' | sed '/^[[:space:]]*$/d' | awk '!seen[$0]++' | sort | awk '/^--.*/{print;next} {a = $0 ORS a};END{printf "%s", a}' > $SCRIPT_DIR/requirements.in
+    uv pip compile $SCRIPT_DIR/requirements.in > $SCRIPT_DIR/requirements_all.txt;
+    uv pip install --prerelease=allow --index-strategy=unsafe-best-match -r $SCRIPT_DIR/requirements_all.txt --extra-index-url=https://download.pytorch.org/whl/rocm6.0 --no-build-isolation
+fi
+
 # Path to software entry point
 SOFTWARE="$SCRIPT_DIR/main.py"
 
