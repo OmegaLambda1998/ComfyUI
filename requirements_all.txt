@@ -14,8 +14,6 @@ anyio==4.4.0
     #   openai
 attrs==23.2.0
     # via aiohttp
-cachetools==5.4.0
-    # via -r requirements.in
 certifi==2024.7.4
     # via
     #   httpcore
@@ -34,14 +32,8 @@ colorama==0.4.6
     # via comfyui-easynodes
 comfyui-easynodes==1.1.1
     # via -r requirements.in
-contourpy==1.2.1
-    # via matplotlib
 cryptography==43.0.0
     # via pyjwt
-cycler==0.12.1
-    # via matplotlib
-deepdiff==7.0.1
-    # via -r requirements.in
 deprecated==1.2.14
     # via pygithub
 distro==1.9.0
@@ -58,8 +50,6 @@ filelock==3.15.4
     #   transformers
 flash-attn @ git+https://github.com/ROCm/flash-attention@b28f18350af92a68bec057875fd486f728c9f084
     # via -r requirements.in
-fonttools==4.53.1
-    # via matplotlib
 frozenlist==1.4.1
     # via
     #   aiohttp
@@ -89,29 +79,18 @@ idna==3.7
     #   httpx
     #   requests
     #   yarl
-imageio==2.34.2
-    # via scikit-image
 iniconfig==2.0.0
     # via pytest
 jinja2==3.1.4
     # via torch
-kiwisolver==1.4.5
-    # via matplotlib
 kornia==0.7.3
     # via -r requirements.in
 kornia-rs==0.1.5
     # via kornia
-lazy-loader==0.4
-    # via scikit-image
 markdown-it-py==3.0.0
     # via rich
 markupsafe==2.1.5
     # via jinja2
-matplotlib==3.9.1
-    # via
-    #   -r requirements.in
-    #   seaborn
-    #   ultralytics
 matrix-client==0.4.0
     # via -r requirements.in
 mdurl==0.1.2
@@ -123,79 +102,38 @@ multidict==6.0.5
     #   aiohttp
     #   yarl
 networkx==3.3
-    # via
-    #   scikit-image
-    #   torch
+    # via torch
 ninja==1.11.1.1
     # via
     #   -r requirements.in
     #   flash-attn
-numpy==1.26.4
+numpy==2.0.1
     # via
-    #   -r requirements.in
     #   comfyui-easynodes
-    #   contourpy
-    #   imageio
-    #   matplotlib
-    #   opencv-python
-    #   opencv-python-headless
-    #   pandas
-    #   scikit-image
     #   scipy
-    #   seaborn
     #   spandrel
-    #   tifffile
     #   torchsde
     #   torchvision
     #   transformers
-    #   ultralytics
-    #   ultralytics-thop
 openai==1.37.0
     # via comfyui-easynodes
-opencv-python==4.10.0.84
-    # via ultralytics
-opencv-python-headless==4.10.0.84
-    # via -r requirements.in
-ordered-set==4.1.0
-    # via deepdiff
 packaging==24.1
     # via
     #   -r requirements.in
     #   flash-attn
     #   huggingface-hub
     #   kornia
-    #   lazy-loader
-    #   matplotlib
     #   pytest
-    #   scikit-image
     #   transformers
-pandas==2.2.2
-    # via
-    #   seaborn
-    #   ultralytics
-piexif==1.1.3
-    # via -r requirements.in
 pillow==10.4.0
     # via
     #   -r requirements.in
     #   comfyui-easynodes
-    #   imageio
-    #   matplotlib
-    #   scikit-image
     #   torchvision
-    #   ultralytics
-pip==24.1.2
-    # via -r requirements.in
 pluggy==1.5.0
     # via pytest
 psutil==6.0.0
-    # via
-    #   -r requirements.in
-    #   ultralytics
-py-cpuinfo==9.0.0
-    # via
-    #   -r requirements.in
-    #   ultralytics
+    # via -r requirements.in
 pycparser==2.22
     # via cffi
 pydantic==2.8.2
@@ -210,26 +148,13 @@ pyjwt==2.8.0
     # via pygithub
 pynacl==1.5.0
     # via pygithub
-pynvml==11.5.3
-    # via -r requirements.in
-pyparsing==3.1.2
-    # via matplotlib
-pyrsmi==1.0.1
-    # via -r requirements.in
 pytest==8.3.1
     # via -r requirements.in
-python-dateutil==2.9.0.post0
-    # via
-    #   matplotlib
-    #   pandas
-pytz==2024.1
-    # via pandas
 pyyaml==6.0.2rc1
     # via
     #   -r requirements.in
     #   huggingface-hub
     #   transformers
-    #   ultralytics
 regex==2024.5.15
     # via transformers
 requests==2.32.3
@@ -238,7 +163,6 @@ requests==2.32.3
     #   matrix-client
     #   pygithub
     #   transformers
-    #   ultralytics
 rich==13.7.1
     # via
     #   -r requirements.in
@@ -248,28 +172,14 @@ safetensors==0.4.3
     #   -r requirements.in
     #   spandrel
     #   transformers
-scikit-image==0.24.0
-    # via -r requirements.in
 scipy==1.14.0
     # via
     #   -r requirements.in
-    #   scikit-image
     #   torchsde
-    #   ultralytics
-seaborn==0.13.2
-    # via ultralytics
-segment-anything==1.0
-    # via -r requirements.in
-send2trash==1.8.3
-    # via -r requirements.in
 sentencepiece==0.2.0
-    # via -r requirements.in
-setuptools==71.1.0
     # via -r requirements.in
 shellingham==1.5.4
     # via typer
-six==1.16.0
-    # via python-dateutil
 smmap==5.0.1
     # via gitdb
 sniffio==1.3.1
@@ -283,8 +193,6 @@ spandrel==0.3.4
     # via -r requirements.in
 sympy==1.13.1
     # via torch
-tifffile==2024.7.24
-    # via scikit-image
 tokenizers==0.19.1
     # via
     #   -r requirements.in
@@ -299,8 +207,6 @@ torch==2.3.1+rocm6.0
     #   torchaudio
     #   torchsde
     #   torchvision
-    #   ultralytics
-    #   ultralytics-thop
 torchaudio==2.3.1+rocm6.0
     # via -r requirements.in
 torchsde==0.2.6
@@ -309,14 +215,12 @@ torchvision==0.18.1+rocm6.0
     # via
     #   -r requirements.in
     #   spandrel
-    #   ultralytics
 tqdm==4.66.4
     # via
     #   -r requirements.in
     #   huggingface-hub
     #   openai
     #   transformers
-    #   ultralytics
 trampoline==0.1.2
     # via torchsde
 transformers==4.43.1
@@ -334,12 +238,6 @@ typing-extensions==4.12.2
     #   spandrel
     #   torch
     #   typer
-tzdata==2024.1
-    # via pandas
-ultralytics==8.2.64
-    # via -r requirements.in
-ultralytics-thop==2.0.0
-    # via ultralytics
 urllib3==1.26.19
     # via
     #   matrix-client

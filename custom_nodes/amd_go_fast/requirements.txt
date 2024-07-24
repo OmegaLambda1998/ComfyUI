@@ -1,0 +1,3 @@
+packaging
+ninja
+git+https://github.com/ROCm/flash-attention@howiejay/navi_support
