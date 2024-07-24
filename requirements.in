@@ -1,5 +1,9 @@
 --extra-index-url=https://download.pytorch.org/whl/rocm6.0
 torch==2.3.1+rocm6.0
+packaging
+ninja
+#flash-attn
+git+https://github.com/ROCm/flash-attention@howiejay/navi_support
 aiohttp
 cachetools
 ComfyUI-EasyNodes

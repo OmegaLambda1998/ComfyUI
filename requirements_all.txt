@@ -49,12 +49,15 @@ distro==1.9.0
 einops==0.8.0
     # via
     #   -r requirements.in
+    #   flash-attn
     #   spandrel
 filelock==3.15.4
     # via
     #   huggingface-hub
     #   torch
     #   transformers
+flash-attn @ git+https://github.com/ROCm/flash-attention@b28f18350af92a68bec057875fd486f728c9f084
+    # via -r requirements.in
 fonttools==4.53.1
     # via matplotlib
 frozenlist==1.4.1
@@ -123,6 +126,10 @@ networkx==3.3
     # via
     #   scikit-image
     #   torch
+ninja==1.11.1.1
+    # via
+    #   -r requirements.in
+    #   flash-attn
 numpy==1.26.4
     # via
     #   -r requirements.in
@@ -153,6 +160,8 @@ ordered-set==4.1.0
     # via deepdiff
 packaging==24.1
     # via
+    #   -r requirements.in
+    #   flash-attn
     #   huggingface-hub
     #   kornia
     #   lazy-loader
@@ -274,7 +283,7 @@ spandrel==0.3.4
     # via -r requirements.in
 sympy==1.13.1
     # via torch
-tifffile==2024.7.21
+tifffile==2024.7.24
     # via scikit-image
 tokenizers==0.19.1
     # via
@@ -284,6 +293,7 @@ torch==2.3.1+rocm6.0
     # via
     #   -r requirements.in
     #   comfyui-easynodes
+    #   flash-attn
     #   kornia
     #   spandrel
     #   torchaudio
