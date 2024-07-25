@@ -1,17 +1,24 @@
 --extra-index-url=https://download.pytorch.org/whl/rocm6.0
 torch==2.3.1+rocm6.0
 aiohttp
+color-matcher
+ComfyUI-EasyNodes
 deepdiff
 einops
 git+https://github.com/ROCm/flash-attention@howiejay/navi_support
 GitPython
+huggingface_hub
 huggingface-hub>0.20
 kornia>=0.7.1
+matplotlib
 matrix-client==0.4.0
+mss
 #non essential dependencies:
 numpy
+opencv-python
 piexif
 Pillow
+pillow>=10.3.0
 Pillow>=9.5.0
 psutil
 py-cpuinfo>=9.0.0

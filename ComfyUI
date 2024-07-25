@@ -142,12 +142,30 @@ SOFTWARE="$SCRIPT_DIR/main.py"
 
 if [[ "$1" == "--mode=0" || "$1" == "--mode=vanilla" ]]; then
     shift
+elif [[ "$1" == "--mode=1" || "$1" == "--mode=vram" ]]; then
+    shift
+    SOFTWARE_ARGS="--verbose --disable-auto-launch --disable-xformers" 
+    # Force fp16.
+    SOFTWARE_ARGS="$SOFTWARE_ARGS --force-fp16"
+    # Store unet weights in fp8_e4m3fn.
+    SOFTWARE_ARGS="$SOFTWARE_ARGS --fp8_e4m3fn-unet"
+    # Store text encoder weights in fp8 (e4m3fn variant).
+    SOFTWARE_ARGS="$SOFTWARE_ARGS --fp8_e4m3fn-text-enc"
+    # Default preview method for sampler nodes.
+    SOFTWARE_ARGS="$SOFTWARE_ARGS --preview-method none"
+    # Use the new pytorch 2.0 cross attention function.
+    SOFTWARE_ARGS="$SOFTWARE_ARGS --use-pytorch-cross-attention"
+    # Split the unet in parts to use less vram.
+    SOFTWARE_ARGS="$SOFTWARE_ARGS --lowvram"
+    # Force ComfyUI to agressively offload to regular ram instead of keeping models in vram when it can.
+    SOFTWARE_ARGS="$SOFTWARE_ARGS --disable-smart-memory"
 else
     SOFTWARE_ARGS="--verbose --disable-auto-launch --disable-xformers" 
     # Use the new pytorch 2.0 cross attention function.
     SOFTWARE_ARGS="$SOFTWARE_ARGS --use-pytorch-cross-attention"
     # Default preview method for sampler nodes.
     SOFTWARE_ARGS="$SOFTWARE_ARGS --preview-method taesd"
+
 fi
 SOFTWARE_ARGS="$SOFTWARE_ARGS $@"
 
