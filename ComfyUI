@@ -56,7 +56,7 @@ if [[ "$1" == "--update" ]]; then
     shift
     echo "Enforcing $ROCM_REQ with --extra-index-url=$EXTRA_INDEX_URL"
     cp $ROCM_REQ $REQ_IN
-    fd -u requirements.txt $SCRIPT_DIR -x sed -e '$s/$/\n/' | sed '/^[[:space:]]*$/d' | awk '!seen[$0]++' | sort >> $REQ_IN
+    fd -e txt -u requirements.txt $SCRIPT_DIR -x sed -e '$s/$/\n/' | sed '/^[[:space:]]*$/d' | awk '!seen[$0]++' | sort >> $REQ_IN
     uv pip compile --prerelease=allow --index-strategy=unsafe-best-match --extra-index-url=$EXTRA_INDEX_URL --no-build-isolation $REQ_IN > $REQ_ALL
     uv pip install --prerelease=allow --index-strategy=unsafe-best-match --extra-index-url=$EXTRA_INDEX_URL --no-build-isolation -r $REQ_ALL 
 fi
@@ -140,12 +140,13 @@ SOFTWARE="$SCRIPT_DIR/main.py"
 ## Force ComfyUI to agressively offload to regular ram instead of keeping models in vram when it can.
 #SOFTWARE_ARGS="$SOFTWARE_ARGS --disable-smart-memory"
 
-SOFTWARE_ARGS="--verbose --disable-auto-launch --disable-xformers" 
-if [[ "$1" == "--mode=minvram" ]]; then
+if [[ "$1" == "--mode=0" || "$1" == "--mode=vanilla" ]]; then
     shift
 else
+    SOFTWARE_ARGS="--verbose --disable-auto-launch --disable-xformers" 
     # Use the new pytorch 2.0 cross attention function.
     SOFTWARE_ARGS="$SOFTWARE_ARGS --use-pytorch-cross-attention"
+    # Default preview method for sampler nodes.
     SOFTWARE_ARGS="$SOFTWARE_ARGS --preview-method taesd"
 fi
 SOFTWARE_ARGS="$SOFTWARE_ARGS $@"
