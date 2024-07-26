@@ -162,9 +162,9 @@ elif [[ "$1" == "--mode=1" || "$1" == "--mode=vram" ]]; then
     SOFTWARE_ARGS="$SOFTWARE_ARGS --preview-method none"
 
     # Split the unet in parts to use less vram.
-    SOFTWARE_ARGS="$SOFTWARE_ARGS --lowvram"
+    #SOFTWARE_ARGS="$SOFTWARE_ARGS --lowvram"
     # Force ComfyUI to agressively offload to regular ram instead of keeping models in vram when it can.
-    SOFTWARE_ARGS="$SOFTWARE_ARGS --disable-smart-memory"
+    #SOFTWARE_ARGS="$SOFTWARE_ARGS --disable-smart-memory"
 else
     # Default preview method for sampler nodes.
     SOFTWARE_ARGS="$SOFTWARE_ARGS --preview-method taesd"
