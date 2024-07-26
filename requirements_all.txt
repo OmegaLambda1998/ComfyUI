@@ -141,7 +141,7 @@ numpy==2.0.1
     #   torchsde
     #   torchvision
     #   transformers
-openai==1.37.0
+openai==1.37.1
     # via comfyui-easynodes
 opencv-python==4.10.0.84
     # via -r requirements.in
@@ -190,7 +190,7 @@ pyparsing==3.1.2
     # via matplotlib
 pyrsmi==1.0.1
     # via -r requirements.in
-pytest==8.3.1
+pytest==8.3.2
     # via -r requirements.in
 python-dateutil==2.9.0.post0
     # via matplotlib
@@ -245,7 +245,7 @@ tokenizers==0.19.1
     # via
     #   -r requirements.in
     #   transformers
-torch==2.3.1+rocm6.0
+torch==2.3.1+rocm5.7
     # via
     #   -r requirements.in
     #   comfyui-easynodes
@@ -255,11 +255,11 @@ torch==2.3.1+rocm6.0
     #   torchaudio
     #   torchsde
     #   torchvision
-torchaudio==2.3.1+rocm6.0
+torchaudio==2.3.1+rocm5.7
     # via -r requirements.in
 torchsde==0.2.6
     # via -r requirements.in
-torchvision==0.18.1+rocm6.0
+torchvision==0.18.1+rocm5.7
     # via
     #   -r requirements.in
     #   spandrel

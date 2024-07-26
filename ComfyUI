@@ -11,18 +11,22 @@ SCRIPT_DIR=$( cd -P "$( dirname "$SOURCE" )" >/dev/null 2>&1 && pwd )
 SCRIPT_NAME="$( basename "$SOURCE" )"
 PYVENV="${PYVENV:-$HOME/.pyvenv}"
 VENV="$PYVENV/$SCRIPT_NAME"
-ROCM_REQ="$SCRIPT_DIR/requirements_rocm.txt"
-EXTRA_INDEX_URL="https://download.pytorch.org/whl/rocm6.0"
 REQ_IN="$SCRIPT_DIR/requirements.in"
 REQ_ALL="$SCRIPT_DIR/requirements_all.txt"
+ROCM_REQ="$SCRIPT_DIR/requirements_rocm.txt"
 
 if [[ "$1" == "--nightly" ]]; then
     shift
     echo "Running nightly build"
     VENV="$VENV-nightly"
     ROCM_REQ="$SCRIPT_DIR/requirements_rocm_nightly.txt"
-    EXTRA_INDEX_URL="https://download.pytorch.org/whl/nightly/rocm6.1"
+elif [[ "$1" == "--lts" ]]; then
+    shift
+    echo "Running lts build"
+    VENV="$VENV-lts"
+    ROCM_REQ="$SCRIPT_DIR/requirements_rocm_lts.txt"
 fi
+EXTRA_INDEX_URL="$(head -n 1 $ROCM_REQ | awk -F '=' '{ print $2 }')"
 
 #
 # Do any setup needed
@@ -41,8 +45,8 @@ export AMDGPU_TARGETS=gfx1102
 export PYTORCH_HIP_ALLOC_CONF=garbage_collection_threshold:0.8,max_split_size_mb:512
 
 export TRITON_USE_ROCM=ON
-
 export USE_CUDA=0
+export HSA_ENABLE_SDMA=0
 
 echo "Activating $VENV"
 deactivate 2> /dev/null
@@ -140,33 +144,50 @@ SOFTWARE="$SCRIPT_DIR/main.py"
 ## Force ComfyUI to agressively offload to regular ram instead of keeping models in vram when it can.
 #SOFTWARE_ARGS="$SOFTWARE_ARGS --disable-smart-memory"
 
+SOFTWARE_ARGS="--verbose --disable-auto-launch --disable-xformers --disable-cuda-malloc" 
 if [[ "$1" == "--mode=0" || "$1" == "--mode=vanilla" ]]; then
     shift
 elif [[ "$1" == "--mode=1" || "$1" == "--mode=vram" ]]; then
     shift
-    SOFTWARE_ARGS="--verbose --disable-auto-launch --disable-xformers" 
     # Force fp16.
     SOFTWARE_ARGS="$SOFTWARE_ARGS --force-fp16"
-    # Store unet weights in fp8_e4m3fn.
-    SOFTWARE_ARGS="$SOFTWARE_ARGS --fp8_e4m3fn-unet"
-    # Store text encoder weights in fp8 (e4m3fn variant).
-    SOFTWARE_ARGS="$SOFTWARE_ARGS --fp8_e4m3fn-text-enc"
+    ## Store unet weights in fp8_e4m3fn.
+    #SOFTWARE_ARGS="$SOFTWARE_ARGS --fp8_e4m3fn-unet"
+    # Store unet weights in fp16.
+    SOFTWARE_ARGS="$SOFTWARE_ARGS --fp16-unet"
+    # Run the VAE in fp16, might cause black images.
+    SOFTWARE_ARGS="$SOFTWARE_ARGS --fp16-vae"
+    ## Store text encoder weights in fp8 (e4m3fn variant).
+    #SOFTWARE_ARGS="$SOFTWARE_ARGS --fp8_e4m3fn-text-enc"
+    # Store text encoder weights in fp16.
+    SOFTWARE_ARGS="$SOFTWARE_ARGS --fp16-text-enc"
+
+
     # Default preview method for sampler nodes.
     SOFTWARE_ARGS="$SOFTWARE_ARGS --preview-method none"
-    # Use the new pytorch 2.0 cross attention function.
-    SOFTWARE_ARGS="$SOFTWARE_ARGS --use-pytorch-cross-attention"
+
     # Split the unet in parts to use less vram.
     SOFTWARE_ARGS="$SOFTWARE_ARGS --lowvram"
     # Force ComfyUI to agressively offload to regular ram instead of keeping models in vram when it can.
     SOFTWARE_ARGS="$SOFTWARE_ARGS --disable-smart-memory"
 else
-    SOFTWARE_ARGS="--verbose --disable-auto-launch --disable-xformers" 
-    # Use the new pytorch 2.0 cross attention function.
-    SOFTWARE_ARGS="$SOFTWARE_ARGS --use-pytorch-cross-attention"
     # Default preview method for sampler nodes.
     SOFTWARE_ARGS="$SOFTWARE_ARGS --preview-method taesd"
-
 fi
+
+if [[ "$1" == "--model=SDXL" || "--model=AuraFlow" ]]; then
+    shift
+    # Use the sub-quadratic cross attention optimization . Ignored when xformers is used.
+    SOFTWARE_ARGS="$SOFTWARE_ARGS --use-quad-cross-attention"
+    # Force enable attention upcasting, please report if it fixes black images.
+    SOFTWARE_ARGS="$SOFTWARE_ARGS --force-upcast-attention"
+else
+    # Disable all upcasting of attention. Should be unnecessary except for debugging.
+    SOFTWARE_ARGS="$SOFTWARE_ARGS --dont-upcast-attention"
+    # Use the new pytorch 2.0 cross attention function.
+    SOFTWARE_ARGS="$SOFTWARE_ARGS --use-pytorch-cross-attention"
+fi
+
 SOFTWARE_ARGS="$SOFTWARE_ARGS $@"
 
 # Run software, passing all args from this script onwards
