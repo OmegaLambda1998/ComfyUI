@@ -151,17 +151,12 @@ elif [[ "$1" == "--mode=1" || "$1" == "--mode=vram" ]]; then
     shift
     # Force fp16.
     SOFTWARE_ARGS="$SOFTWARE_ARGS --force-fp16"
-    ## Store unet weights in fp8_e4m3fn.
-    #SOFTWARE_ARGS="$SOFTWARE_ARGS --fp8_e4m3fn-unet"
-    # Store unet weights in fp16.
-    SOFTWARE_ARGS="$SOFTWARE_ARGS --fp16-unet"
+    # Store unet weights in fp8_e4m3fn.
+    SOFTWARE_ARGS="$SOFTWARE_ARGS --fp8_e4m3fn-unet"
     # Run the VAE in fp16, might cause black images.
     SOFTWARE_ARGS="$SOFTWARE_ARGS --fp16-vae"
-    ## Store text encoder weights in fp8 (e4m3fn variant).
-    #SOFTWARE_ARGS="$SOFTWARE_ARGS --fp8_e4m3fn-text-enc"
-    # Store text encoder weights in fp16.
-    SOFTWARE_ARGS="$SOFTWARE_ARGS --fp16-text-enc"
-
+    # Store text encoder weights in fp8 (e4m3fn variant).
+    SOFTWARE_ARGS="$SOFTWARE_ARGS --fp8_e4m3fn-text-enc"
 
     # Default preview method for sampler nodes.
     SOFTWARE_ARGS="$SOFTWARE_ARGS --preview-method none"
