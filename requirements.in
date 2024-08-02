@@ -1,35 +1,41 @@
---extra-index-url=https://download.pytorch.org/whl/rocm5.7
-torch==2.3.1+rocm5.7
+--extra-index-url=https://download.pytorch.org/whl/rocm6.0
+torch==2.3.1+rocm6.0
+# 1.5.9: https://github.com/erdewit/nest_asyncio/issues/87
 aiohttp
-clip-interrogator
-color-matcher
+# Already required by ComfyUI
+# click ~= 8.1
+# Client (used by transpiler and runtime)
+colorama
+comfy-script[default,cli]
 ComfyUI-EasyNodes
+ComfyUI_Ib_CustomNodes >= 0.2.1
+comfyui-tooling-nodes
 deepdiff
+dynaconf
 einops
 git+https://github.com/ROCm/flash-attention@howiejay/navi_support
 GitPython
-huggingface_hub
 huggingface-hub>0.20
+# If you need the CLI:
+ipywidgets ~= 8.1
+# Jupyter
 kornia>=0.7.1
-matplotlib
 matrix-client==0.4.0
-mss
+nest_asyncio ~= 1.0, >= 1.5.9
+networkx[default] ~= 3.0
+# Nodes
 #non essential dependencies:
 numpy
-open_clip_torch
-opencv-python
 piexif
 Pillow
-pillow>=10.3.0
-Pillow>=9.5.0
 psutil
-py-cpuinfo>=9.0.0
+py-cpuinfo
 PyGithub
 pynvml
-pyrsmi
 pytest>=7.8.0
 pyyaml
 rich
+# Runtime
 safetensors>=0.4.2
 scipy
 send2trash
@@ -44,5 +50,7 @@ torchvision
 tqdm
 transformers
 transformers>=4.28.1
+# Transpiler
 typer
 typing-extensions
+wrapt ~= 1.0
