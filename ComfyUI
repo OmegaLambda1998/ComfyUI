@@ -16,72 +16,30 @@ REQ_ALL="$SCRIPT_DIR/requirements_all.txt"
 ROCM_REQ="$SCRIPT_DIR/requirements_rocm.txt"
 
 SOFTWARE_ARGS="--verbose --disable-auto-launch --disable-xformers --disable-cuda-malloc --preview-method taesd"
-if [[ "$1" == "AuraFlow" ]]; then
+if [[ "$1" == "Flux" ]]; then
     shift
-    echo "Running AuraFlow preset"
-    VENV="$VENV-lts"
-    ROCM_REQ="$SCRIPT_DIR/requirements_rocm_lts.txt"
+    echo "Running Flux preset"
+    #VENV="$VENV-lts"
+    #ROCM_REQ="$SCRIPT_DIR/requirements_rocm_lts.txt"
 
     # Force fp16.
     SOFTWARE_ARGS="$SOFTWARE_ARGS --force-fp16"
     # Store unet weights in fp8_e4m3fn.
     SOFTWARE_ARGS="$SOFTWARE_ARGS --fp8_e4m3fn-unet"
     # Run the VAE in fp16, might cause black images.
-    SOFTWARE_ARGS="$SOFTWARE_ARGS --fp16-vae"
+    #SOFTWARE_ARGS="$SOFTWARE_ARGS --fp16-vae"
     # Store text encoder weights in fp8 (e4m3fn variant).
     SOFTWARE_ARGS="$SOFTWARE_ARGS --fp8_e4m3fn-text-enc"
     # Use the sub-quadratic cross attention optimization . Ignored when xformers is used.
-    SOFTWARE_ARGS="$SOFTWARE_ARGS --use-quad-cross-attention"
+    #SOFTWARE_ARGS="$SOFTWARE_ARGS --use-quad-cross-attention"
     # Force enable attention upcasting, please report if it fixes black images.
-    SOFTWARE_ARGS="$SOFTWARE_ARGS --force-upcast-attention"
+    #SOFTWARE_ARGS="$SOFTWARE_ARGS --force-upcast-attention"
+    # Use the new pytorch 2.0 cross attention function.
+    SOFTWARE_ARGS="$SOFTWARE_ARGS --use-pytorch-cross-attention"
     # Split the unet in parts to use less vram.
     SOFTWARE_ARGS="$SOFTWARE_ARGS --lowvram"
     # Force ComfyUI to agressively offload to regular ram instead of keeping models in vram when it can.
-    SOFTWARE_ARGS="$SOFTWARE_ARGS --disable-smart-memory"
-elif [[ "$1" == "Pony" ]]; then
-    shift
-    echo "Running Pony preset"
-    VENV="$VENV-lts"
-    ROCM_REQ="$SCRIPT_DIR/requirements_rocm_lts.txt"
-
-    # Force fp16.
-    SOFTWARE_ARGS="$SOFTWARE_ARGS --force-fp16"
-    # Store unet weights in fp16.
-    SOFTWARE_ARGS="$SOFTWARE_ARGS --fp16-unet"
-    # Run the VAE in fp16, might cause black images.
-    SOFTWARE_ARGS="$SOFTWARE_ARGS --fp16-vae"
-    # Store text encoder weights in fp16.
-    SOFTWARE_ARGS="$SOFTWARE_ARGS --fp16-text-enc"
-    # Use the sub-quadratic cross attention optimization . Ignored when xformers is used.
-    SOFTWARE_ARGS="$SOFTWARE_ARGS --use-quad-cross-attention"
-    # Force enable attention upcasting, please report if it fixes black images.
-    SOFTWARE_ARGS="$SOFTWARE_ARGS --force-upcast-attention"
-    # Split the unet in parts to use less vram.
-    SOFTWARE_ARGS="$SOFTWARE_ARGS --lowvram"
-    # Force ComfyUI to agressively offload to regular ram instead of keeping models in vram when it can.
-    SOFTWARE_ARGS="$SOFTWARE_ARGS --disable-smart-memory"
-elif [[ "$1" == "SDXL" ]]; then
-    shift
-    echo "Running SDXL preset"
-    VENV="$VENV-lts"
-    ROCM_REQ="$SCRIPT_DIR/requirements_rocm_lts.txt"
-
-    # Force fp16.
-    SOFTWARE_ARGS="$SOFTWARE_ARGS --force-fp16"
-    # Store unet weights in fp8_e4m3fn.
-    SOFTWARE_ARGS="$SOFTWARE_ARGS --fp8_e4m3fn-unet"
-    # Run the VAE in fp16, might cause black images.
-    SOFTWARE_ARGS="$SOFTWARE_ARGS --fp16-vae"
-    # Store text encoder weights in fp8 (e4m3fn variant).
-    SOFTWARE_ARGS="$SOFTWARE_ARGS --fp8_e4m3fn-text-enc"
-    # Use the sub-quadratic cross attention optimization . Ignored when xformers is used.
-    SOFTWARE_ARGS="$SOFTWARE_ARGS --use-quad-cross-attention"
-    # Force enable attention upcasting, please report if it fixes black images.
-    SOFTWARE_ARGS="$SOFTWARE_ARGS --force-upcast-attention"
-    # Split the unet in parts to use less vram.
-    SOFTWARE_ARGS="$SOFTWARE_ARGS --lowvram"
-    # Force ComfyUI to agressively offload to regular ram instead of keeping models in vram when it can.
-    SOFTWARE_ARGS="$SOFTWARE_ARGS --disable-smart-memory"
+    #SOFTWARE_ARGS="$SOFTWARE_ARGS --disable-smart-memory"
 else
     # Use the new pytorch 2.0 cross attention function.
     SOFTWARE_ARGS="$SOFTWARE_ARGS --use-pytorch-cross-attention"
@@ -102,11 +60,16 @@ export PYTORCH_ROCM_ARCH=gfx1102
 export HCC_AMDGPU_TARGET=gfx1102
 export AMDGPU_TARGETS=gfx1102
 
-export PYTORCH_HIP_ALLOC_CONF=garbage_collection_threshold:0.8,max_split_size_mb:512
+export PYTORCH_HIP_ALLOC_CONF=garbage_collection_threshold:0.6,max_split_size_mb:2048
+
+export GRADIO_ANALYTICS_ENABLED=FALSE
+export LD_PRELOAD=libtcmalloc.so
 
 export TRITON_USE_ROCM=ON
 export USE_CUDA=0
 export HSA_ENABLE_SDMA=0
+
+export ROCM_PATH="/opt/rocm-6.2.0"
 
 echo "Activating $VENV"
 deactivate 2> /dev/null
@@ -131,9 +94,20 @@ SOFTWARE="$SCRIPT_DIR/main.py"
 
 SOFTWARE_ARGS="$SOFTWARE_ARGS $@"
 
+# Get current tuned profile
+ACTIVE_PROFILE="$(cat /etc/tuned/active_profile)"
+# Get current ppd performance profile
+PPD_PERF_PROFILE="$(cat /etc/tuned/ppd.conf | grep "performance=" | awk -F= ' {print $2}')"
+
+echo "Changing tuned profile from $ACTIVE_PROFILE to $PPD_PERF_PROFILE"
+tuned-adm profile "$PPD_PERF_PROFILE" && tuned-adm verify
+
 # Run software, passing all args from this script onwards
 echo "Launching python3 $SOFTWARE $SOFTWARE_ARGS"
 (cd $SCRIPT_DIR; python3 $SOFTWARE $SOFTWARE_ARGS)
+
+echo "Changing tuned profile from $PPD_PERF_PROFILE to $ACTIVE_PROFILE"
+tuned-adm profile "$ACTIVE_PROFILE" && tuned-adm verify
 
 #
 # --- CLI Args ---
@@ -211,5 +185,3 @@ echo "Launching python3 $SOFTWARE $SOFTWARE_ARGS"
 
 ## Force ComfyUI to agressively offload to regular ram instead of keeping models in vram when it can.
 #SOFTWARE_ARGS="$SOFTWARE_ARGS --disable-smart-memory"
-
-

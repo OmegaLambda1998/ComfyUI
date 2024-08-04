@@ -1,16 +1,14 @@
---extra-index-url=https://download.pytorch.org/whl/rocm6.0
-torch==2.3.1+rocm6.0
+--extra-index-url=https://download.pytorch.org/whl/rocm6.1
+torch==2.4.0+rocm6.1
 # 1.5.9: https://github.com/erdewit/nest_asyncio/issues/87
 aiohttp
 # Already required by ComfyUI
 # click ~= 8.1
 # Client (used by transpiler and runtime)
-colorama
 comfy-script[default,cli]
 ComfyUI-EasyNodes
 ComfyUI_Ib_CustomNodes >= 0.2.1
 comfyui-tooling-nodes
-deepdiff
 dynaconf
 einops
 git+https://github.com/ROCm/flash-attention@howiejay/navi_support
@@ -23,15 +21,12 @@ kornia>=0.7.1
 matrix-client==0.4.0
 nest_asyncio ~= 1.0, >= 1.5.9
 networkx[default] ~= 3.0
+ninja
 # Nodes
 #non essential dependencies:
-numpy
-piexif
 Pillow
 psutil
-py-cpuinfo
 PyGithub
-pynvml
 pytest>=7.8.0
 pyyaml
 rich
