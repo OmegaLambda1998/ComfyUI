@@ -19,3 +19,5 @@ venv/
 *.log
 web_custom_versions/
 my_workflows/
+requirements_all.txt
+requirements.in
