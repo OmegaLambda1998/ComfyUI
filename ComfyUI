@@ -17,32 +17,49 @@ function run() {
     REQ_ALL="$SCRIPT_DIR/requirements_all.txt"
     ROCM_REQ="$SCRIPT_DIR/requirements_rocm.txt"
 
-    SOFTWARE_ARGS="--verbose --disable-auto-launch --disable-xformers --disable-cuda-malloc --preview-method taesd"
-    case "$1" in
-        "vanilla")
-            shift
-            SOFTWARE_ARGS=""
-            ;;
-        "nightly")
-            shift
-            VENV="$VENV-nightly"
-            ROCM_REQ="$SCRIPT_DIR/requirements_rocm-nightly.txt"
-            ;;
-        "lts")
-            shift
-            VENV="$VENV-lts"
-            ROCM_REQ="$SCRIPT_DIR/requirements_rocm-lts.txt"
-            ;;
-        "*")
-            SOFTWARE_ARGS="$SOFTWARE_ARGS --use-pytorch-cross-attention"
-            ;;
-    esac
+    #
+    # Parse CLI Args
+    #
+    SOFTWARE_ARGS=""
+    UPDATE=false
+    QUICK=false
+    for opt in "$@"; do
+        case $opt in
+            # ROCm Version
+            "nightly")
+                shift
+                VENV="$VENV-nightly"
+                ROCM_REQ="$SCRIPT_DIR/requirements_rocm_nightly.txt"
+                ;;
+            "lts")
+                shift
+                VENV="$VENV-lts"
+                ROCM_REQ="$SCRIPT_DIR/requirements_rocm_lts.txt"
+                ;;
+
+            # Modes
+            "update")
+                shift
+                UPDATE=true
+                ;;
+
+            "quick")
+                shift
+                QUICK=true
+                ;;
+
+            # CLI Presets
+            "vanilla")
+                shift
+                SOFTWARE_ARGS=""
+                ;;
+        esac
+    done
     EXTRA_INDEX_URL="$(head -n 1 $ROCM_REQ | awk -F '=' '{ print $2 }')"
 
     #
-    # Do any setup needed
+    # Activate venv
     #
-
     echo "Activating $VENV"
     deactivate 2> /dev/null
     source "$VENV/bin/activate"
@@ -51,8 +68,7 @@ function run() {
     # Update all
     #
     set -e
-    if [[ "$1" == "--update" ]]; then
-        shift
+    if $UPDATE; then
         echo "Syncing $ROCM_REQ with --extra-index-url=$EXTRA_INDEX_URL"
         cp $ROCM_REQ $REQ_IN
         fd -e txt -u requirements.txt $SCRIPT_DIR -x sed -e '$s/$/\n/' | sed '/^[[:space:]]*$/d' | awk '!seen[$0]++' | sort >> $REQ_IN
@@ -61,20 +77,29 @@ function run() {
     fi
     set +e
 
-    if [[ "$1" == "--quick" ]]; then
+    #
+    # Fast quit
+    #
+    if $QUICK; then
         SOFTWARE_ARGS="$SOFTWARE_ARGS --quick-test-for-ci"
     fi
 
     # Path to software entry point
     SOFTWARE="$SCRIPT_DIR/main.py"
 
+    # Append any remaining CLI args
     SOFTWARE_ARGS="$SOFTWARE_ARGS $@"
 
     echo "Launching python3 $SOFTWARE $SOFTWARE_ARGS"
     (cd $SCRIPT_DIR; python3 $SOFTWARE $SOFTWARE_ARGS)
+}
 
-# Change power profile
-CURRENT_PROFILE="$(power_profile status)"
-systemctl start performance.service
-run $@
-systemctl start "$CURRENT_PROFILE.service"
+if [[ "$1" == "-h" || "$1" == "--help" || "$1" == "help" ]]; then
+    (cd $SCRIPT_DIR; python3 main.py -h)
+else
+    # Change power profile
+    CURRENT_PROFILE="$(power_profile status)"
+    systemctl start performance.service
+    run $@
+    systemctl start "$CURRENT_PROFILE.service"
+fi

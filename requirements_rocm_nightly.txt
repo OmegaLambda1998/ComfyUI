@@ -1,2 +1,2 @@
 --extra-index-url=https://download.pytorch.org/whl/nightly/rocm6.1
-torch==2.4.0.dev20240606+rocm6.1
+torch==2.5.0.dev20240806+rocm6.1

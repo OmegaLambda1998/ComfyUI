@@ -1,1 +1,9 @@
 /* Put custom styles here */
+
+div.comfyui-workflows:has(button.comfyui-workflows-button) {
+    display: none;
+}
+
+div.comfyui-split-button:has(button[title="Save the current workflow"]) {
+    display: none;
+}
