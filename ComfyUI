@@ -9,179 +9,97 @@ while [ -L "$SOURCE" ]; do # resolve $SOURCE until the file is no longer a symli
 done
 SCRIPT_DIR=$( cd -P "$( dirname "$SOURCE" )" >/dev/null 2>&1 && pwd )
 SCRIPT_NAME="$( basename "$SOURCE" )"
-PYVENV="${PYVENV:-$HOME/.pyvenv}"
-VENV="$PYVENV/$SCRIPT_NAME"
-REQ_IN="$SCRIPT_DIR/requirements.in"
-REQ_ALL="$SCRIPT_DIR/requirements_all.txt"
-ROCM_REQ="$SCRIPT_DIR/requirements_rocm.txt"
 
-SOFTWARE_ARGS="--verbose --disable-auto-launch --disable-xformers --disable-cuda-malloc --preview-method taesd"
-if [[ "$1" == "Flux" ]]; then
-    shift
-    echo "Running Flux preset"
-    #VENV="$VENV-lts"
-    #ROCM_REQ="$SCRIPT_DIR/requirements_rocm_lts.txt"
+function run() {
+    PYVENV="${PYVENV:-$HOME/.pyvenv}"
+    VENV="$PYVENV/$SCRIPT_NAME"
+    REQ_IN="$SCRIPT_DIR/requirements.in"
+    REQ_ALL="$SCRIPT_DIR/requirements_all.txt"
+    ROCM_REQ="$SCRIPT_DIR/requirements_rocm.txt"
 
-    # Force fp16.
-    SOFTWARE_ARGS="$SOFTWARE_ARGS --force-fp16"
-    # Store unet weights in fp8_e4m3fn.
-    SOFTWARE_ARGS="$SOFTWARE_ARGS --fp8_e4m3fn-unet"
-    # Run the VAE in fp16, might cause black images.
-    #SOFTWARE_ARGS="$SOFTWARE_ARGS --fp16-vae"
-    # Store text encoder weights in fp8 (e4m3fn variant).
-    SOFTWARE_ARGS="$SOFTWARE_ARGS --fp8_e4m3fn-text-enc"
-    # Use the sub-quadratic cross attention optimization . Ignored when xformers is used.
-    #SOFTWARE_ARGS="$SOFTWARE_ARGS --use-quad-cross-attention"
-    # Force enable attention upcasting, please report if it fixes black images.
-    #SOFTWARE_ARGS="$SOFTWARE_ARGS --force-upcast-attention"
-    # Use the new pytorch 2.0 cross attention function.
-    SOFTWARE_ARGS="$SOFTWARE_ARGS --use-pytorch-cross-attention"
-    # Split the unet in parts to use less vram.
-    SOFTWARE_ARGS="$SOFTWARE_ARGS --lowvram"
-    # Force ComfyUI to agressively offload to regular ram instead of keeping models in vram when it can.
-    #SOFTWARE_ARGS="$SOFTWARE_ARGS --disable-smart-memory"
+    #
+    # Parse CLI Args
+    #
+    SOFTWARE_ARGS=""
+    UPDATE=false
+    QUICK=false
+    for opt in "$@"; do
+        case $opt in
+            # ROCm Version
+            "nightly")
+                shift
+                VENV="$VENV-nightly"
+                ROCM_REQ="$SCRIPT_DIR/requirements_rocm_nightly.txt"
+                ;;
+            "lts")
+                shift
+                VENV="$VENV-lts"
+                ROCM_REQ="$SCRIPT_DIR/requirements_rocm_lts.txt"
+                ;;
+
+            # Modes
+            "update")
+                shift
+                UPDATE=true
+                ;;
+
+            "quick")
+                shift
+                QUICK=true
+                ;;
+
+            # CLI Presets
+            "vanilla")
+                shift
+                SOFTWARE_ARGS=""
+                ;;
+        esac
+    done
+    EXTRA_INDEX_URL="$(head -n 1 $ROCM_REQ | awk -F '=' '{ print $2 }')"
+
+    #
+    # Activate venv
+    #
+    echo "Activating $VENV"
+    deactivate 2> /dev/null
+    source "$VENV/bin/activate"
+
+    #
+    # Update all
+    #
+    set -e
+    if $UPDATE; then
+        echo "Syncing $ROCM_REQ with --extra-index-url=$EXTRA_INDEX_URL"
+        cp $ROCM_REQ $REQ_IN
+        fd -e txt -u requirements.txt $SCRIPT_DIR -x sed -e '$s/$/\n/' | sed '/^[[:space:]]*$/d' | awk '!seen[$0]++' | sort >> $REQ_IN
+        uv pip compile --prerelease=allow --index-strategy=unsafe-best-match --extra-index-url=$EXTRA_INDEX_URL --no-build-isolation $REQ_IN > $REQ_ALL
+        uv pip install --prerelease=allow --index-strategy=unsafe-best-match --extra-index-url=$EXTRA_INDEX_URL --no-build-isolation -r $REQ_ALL 
+    fi
+    set +e
+
+    #
+    # Fast quit
+    #
+    if $QUICK; then
+        SOFTWARE_ARGS="$SOFTWARE_ARGS --quick-test-for-ci"
+    fi
+
+    # Path to software entry point
+    SOFTWARE="$SCRIPT_DIR/main.py"
+
+    # Append any remaining CLI args
+    SOFTWARE_ARGS="$SOFTWARE_ARGS $@"
+
+    echo "Launching python3 $SOFTWARE $SOFTWARE_ARGS"
+    (cd $SCRIPT_DIR; python3 $SOFTWARE $SOFTWARE_ARGS)
+}
+
+if [[ "$1" == "-h" || "$1" == "--help" || "$1" == "help" ]]; then
+    (cd $SCRIPT_DIR; python3 main.py -h)
 else
-    # Use the new pytorch 2.0 cross attention function.
-    SOFTWARE_ARGS="$SOFTWARE_ARGS --use-pytorch-cross-attention"
+    # Change power profile
+    CURRENT_PROFILE="$(power_profile status)"
+    systemctl start performance.service
+    run $@
+    systemctl start "$CURRENT_PROFILE.service"
 fi
-EXTRA_INDEX_URL="$(head -n 1 $ROCM_REQ | awk -F '=' '{ print $2 }')"
-
-#
-# Do any setup needed
-#
-
-# Temporary environment variables
-export HSA_OVERRIDE_GFX_VERSION=11.0.0
-
-export HIP_VISIBLE_DEVICES=0
-export ROCR_VISIBLE_DEVICES=0
-
-export PYTORCH_ROCM_ARCH=gfx1102
-export HCC_AMDGPU_TARGET=gfx1102
-export AMDGPU_TARGETS=gfx1102
-
-export PYTORCH_HIP_ALLOC_CONF=garbage_collection_threshold:0.6,max_split_size_mb:2048
-
-export GRADIO_ANALYTICS_ENABLED=FALSE
-export LD_PRELOAD=libtcmalloc.so
-
-export TRITON_USE_ROCM=ON
-export USE_CUDA=0
-export HSA_ENABLE_SDMA=0
-
-export ROCM_PATH="/opt/rocm-6.2.0"
-
-echo "Activating $VENV"
-deactivate 2> /dev/null
-source "$VENV/bin/activate"
-
-#
-# Update all
-#
-set -e
-if [[ "$1" == "--update" ]]; then
-    shift
-    echo "Syncing $ROCM_REQ with --extra-index-url=$EXTRA_INDEX_URL"
-    cp $ROCM_REQ $REQ_IN
-    fd -e txt -u requirements.txt $SCRIPT_DIR -x sed -e '$s/$/\n/' | sed '/^[[:space:]]*$/d' | awk '!seen[$0]++' | sort >> $REQ_IN
-    uv pip compile --prerelease=allow --index-strategy=unsafe-best-match --extra-index-url=$EXTRA_INDEX_URL --no-build-isolation $REQ_IN > $REQ_ALL
-    uv pip install --prerelease=allow --index-strategy=unsafe-best-match --extra-index-url=$EXTRA_INDEX_URL --no-build-isolation -r $REQ_ALL 
-fi
-set +e
-
-# Path to software entry point
-SOFTWARE="$SCRIPT_DIR/main.py"
-
-SOFTWARE_ARGS="$SOFTWARE_ARGS $@"
-
-# Get current tuned profile
-ACTIVE_PROFILE="$(cat /etc/tuned/active_profile)"
-# Get current ppd performance profile
-PPD_PERF_PROFILE="$(cat /etc/tuned/ppd.conf | grep "performance=" | awk -F= ' {print $2}')"
-
-echo "Changing tuned profile from $ACTIVE_PROFILE to $PPD_PERF_PROFILE"
-tuned-adm profile "$PPD_PERF_PROFILE" && tuned-adm verify
-
-# Run software, passing all args from this script onwards
-echo "Launching python3 $SOFTWARE $SOFTWARE_ARGS"
-(cd $SCRIPT_DIR; python3 $SOFTWARE $SOFTWARE_ARGS)
-
-echo "Changing tuned profile from $PPD_PERF_PROFILE to $ACTIVE_PROFILE"
-tuned-adm profile "$ACTIVE_PROFILE" && tuned-adm verify
-
-#
-# --- CLI Args ---
-#
-
-## Force fp32 (If this makes your GPU work better please report it).
-#SOFTWARE_ARGS="$SOFTWARE_ARGS --force-fp32"
-## Force fp16.
-#SOFTWARE_ARGS="$SOFTWARE_ARGS --force-fp16"
-
-## Run the UNET in bf16. This should only be used for testing stuff.
-#SOFTWARE_ARGS="$SOFTWARE_ARGS --bf16-unet"
-## Store unet weights in fp16.
-#SOFTWARE_ARGS="$SOFTWARE_ARGS --fp16-unet"
-## Store unet weights in fp8_e4m3fn.
-#SOFTWARE_ARGS="$SOFTWARE_ARGS --fp8_e4m3fn-unet"
-## Store unet weights in fp8_e5m2.
-#SOFTWARE_ARGS="$SOFTWARE_ARGS --fp8_e5m2-unet"
-
-## Run the VAE in fp16, might cause black images.
-#SOFTWARE_ARGS="$SOFTWARE_ARGS --fp16-vae"
-## Run the VAE in full precision fp32.
-#SOFTWARE_ARGS="$SOFTWARE_ARGS --fp32-vae"
-## Run the VAE in bf16.
-#SOFTWARE_ARGS="$SOFTWARE_ARGS --bf16-vae"
-
-## Run the VAE on the CPU.
-#SOFTWARE_ARGS="$SOFTWARE_ARGS --cpu-vae"
-
-## Store text encoder weights in fp8 (e4m3fn variant).
-#SOFTWARE_ARGS="$SOFTWARE_ARGS --fp8_e4m3fn-text-enc"
-## Store text encoder weights in fp8 (e5m2 variant).
-#SOFTWARE_ARGS="$SOFTWARE_ARGS --fp8_e5m2-text-enc"
-## Store text encoder weights in fp16.
-#SOFTWARE_ARGS="$SOFTWARE_ARGS --fp16-text-enc"
-## Store text encoder weights in fp32.
-#SOFTWARE_ARGS="$SOFTWARE_ARGS --fp32-text-enc"
-
-## Force channels last format when inferencing the models.
-#SOFTWARE_ARGS="$SOFTWARE_ARGS --force-channels-last"
-
-## Default preview method for sampler nodes.
-#SOFTWARE_ARGS="$SOFTWARE_ARGS --preview-method [none,auto,latent2rgb,taesd]"
-
-## Use the split cross attention optimization. Ignored when xformers is used.
-#SOFTWARE_ARGS="$SOFTWARE_ARGS --use-split-cross-attention"
-## Use the sub-quadratic cross attention optimization . Ignored when xformers is used.
-#SOFTWARE_ARGS="$SOFTWARE_ARGS --use-quad-cross-attention"
-## Use the new pytorch 2.0 cross attention function.
-#SOFTWARE_ARGS="$SOFTWARE_ARGS --use-pytorch-cross-attention"
-
-## Disable xformers.
-#SOFTWARE_ARGS="$SOFTWARE_ARGS --disable-xformers"
-
-## Force enable attention upcasting, please report if it fixes black images.
-#SOFTWARE_ARGS="$SOFTWARE_ARGS --force-upcast-attention"
-## Disable all upcasting of attention. Should be unnecessary except for debugging.
-#SOFTWARE_ARGS="$SOFTWARE_ARGS --dont-upcast-attention"
-
-## Store and run everything (text encoders/CLIP models, etc... on the GPU).
-#SOFTWARE_ARGS="$SOFTWARE_ARGS --gpu-only"
-## By default models will be unloaded to CPU memory after being used. This option keeps them in GPU memory
-#SOFTWARE_ARGS="$SOFTWARE_ARGS --highvram"
-## Used to force normal vram use if lowvram gets automatically enabled.
-#SOFTWARE_ARGS="$SOFTWARE_ARGS --normalvram"
-## Split the unet in parts to use less vram.
-#SOFTWARE_ARGS="$SOFTWARE_ARGS --lowvram"
-## When lowvram isn't enough.
-#SOFTWARE_ARGS="$SOFTWARE_ARGS --novram"
-## To use the CPU for everything (slow).
-#SOFTWARE_ARGS="$SOFTWARE_ARGS --cpu"
-
-## Allows you to choose the hash function to use for duplicate filename / contents comparison. Default is sha256.
-#SOFTWARE_ARGS="$SOFTWARE_ARGS --default-hashing-function {md5,sha1,sha256,sha512}"
-
-## Force ComfyUI to agressively offload to regular ram instead of keeping models in vram when it can.
-#SOFTWARE_ARGS="$SOFTWARE_ARGS --disable-smart-memory"
