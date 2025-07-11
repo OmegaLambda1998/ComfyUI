@@ -5,10 +5,68 @@ readme = "README.md"
 license = { file = "LICENSE" }
 requires-python = ">=3.9"
 
+dependencies = [
+    "torch",
+    "torchsde",
+    "torchvision",
+    "torchaudio",
+    "pytorch-triton-rocm",
+    "comfyui-frontend-package==1.23.4",
+    "comfyui-workflow-templates==0.1.35",
+    "comfyui-embedded-docs==0.2.4",
+    "numpy>=1.26.0,<1.27",
+    "einops",
+    "transformers>=4.37.2",
+    "tokenizers>=0.13.3",
+    "sentencepiece",
+    "safetensors>=0.4.2",
+    "aiohttp>=3.11.8",
+    "yarl>=1.18.0",
+    "pyyaml",
+    "pillow",
+    "scipy",
+    "tqdm",
+    "psutil",
+    "alembic",
+    "sqlalchemy",
+    "kornia>=0.7.1",
+    "spandrel",
+    "soundfile",
+    "av>=14.2.0",
+    "pydantic~=2.0",
+    "pydantic-settings~=2.0",
+    "gitpython",
+    "pygithub",
+    "matrix-client==0.4.0",
+    "huggingface-hub>0.20",
+    "typer",
+    "rich",
+    "typing-extensions",
+    "toml",
+    "uv",
+    "chardet",
+    "pip>=25.1.1",
+    "onnx!=1.16.2",
+]
+
 [project.urls]
 homepage = "https://www.comfy.org/"
 repository = "https://github.com/comfyanonymous/ComfyUI"
 documentation = "https://docs.comfy.org/"
+
+[tool.uv]
+environments = [
+    "sys_platform == 'linux'",
+]
+
+prerelease = "allow"
+
+[tool.uv.sources]
+
+torch = { url = "https://repo.radeon.com/rocm/manylinux/rocm-rel-6.4.1/torch-2.6.0%2Brocm6.4.1.git1ded221d-cp312-cp312-linux_x86_64.whl" }
+torchaudio = { url = "https://repo.radeon.com/rocm/manylinux/rocm-rel-6.4.1/torchaudio-2.6.0%2Brocm6.4.1.gitd8831425-cp312-cp312-linux_x86_64.whl" }
+torchvision = { url = "https://repo.radeon.com/rocm/manylinux/rocm-rel-6.4.1/torchvision-0.21.0%2Brocm6.4.1.git4040d51f-cp312-cp312-linux_x86_64.whl" }
+pytorch-triton-rocm = { url = "https://repo.radeon.com/rocm/manylinux/rocm-rel-6.4.1/pytorch_triton_rocm-3.2.0%2Brocm6.4.1.git6da9e660-cp312-cp312-linux_x86_64.whl" }
 
 [tool.ruff]
 lint.select = [
